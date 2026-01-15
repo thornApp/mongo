@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
-
+const jwt = require('jsonwebtoken');
 
 const userSchema = mongoose.Schema({
     name: {
@@ -48,6 +48,29 @@ userSchema.pre('save', async function (next) {
     }
 })
 
+userSchema.methods.comparePassword = async function (plainPassword) {
+    try {
+        const isMatch = await bcrypt.compare(plainPassword, this.password);
+        return isMatch;
+    } catch (err) {
+        throw err;
+    }
+}
+
+userSchema.methods.generateAuthToken = async function () {
+    try {
+        const user = this;
+
+        const jwtToken = jwt.sign( user._id.toHexString(), 'secretToken');
+
+        user.token = jwtToken;
+        const userInfo = await user.save();
+
+        return userInfo;
+    } catch (err) {
+        throw err;
+    }
+}
 const User = mongoose.model('User', userSchema);
 
 module.exports = { User };
